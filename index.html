@@ -904,7 +904,10 @@
 
 // ===== 시작: 이름 묶음 + 안내 문장 1회 표시 =====
 
-// 호출된 학생들 중 같은 이름(성 제외)이 몇 명인지 셉니다.
+// 서버가 보낸 "학급 명단에서 이름이 겹치는 목록"입니다.
+const classDup = Array.isArray(state.dup) ? state.dup : [];
+
+// 이번에 호출된 학생들 중 같은 이름의 수도 함께 셉니다.
 const givenCount = {};
 
 names.forEach(function (name) {
@@ -912,7 +915,6 @@ names.forEach(function (name) {
   givenCount[given] = (givenCount[given] || 0) + 1;
 });
 
-// 이름들을 한 줄(길면 자동 줄바꿈)에 쉼표로 이어서 표시합니다.
 const nameGroup = el('div', 'call-group');
 nameGroup.style.display = 'flex';
 nameGroup.style.flexWrap = 'wrap';
@@ -928,8 +930,10 @@ names.forEach(function (name, index) {
   nameText.style.whiteSpace = 'nowrap';
   nameText.style.fontWeight = '900';
 
-  // 이름이 겹치는 경우에만 성을 이름의 절반 크기로 표시합니다.
-  const isDuplicate = givenCount[parts.givenName] > 1;
+  // 학급 명단에서 이름이 겹치거나, 이번 호출 안에서 겹치면 성을 표시합니다.
+  const isDuplicate =
+    classDup.indexOf(parts.givenName) >= 0 ||
+    givenCount[parts.givenName] > 1;
 
   if (parts.surname && isDuplicate) {
     const surnameText = el(
@@ -944,12 +948,10 @@ names.forEach(function (name, index) {
     nameText.appendChild(surnameText);
   }
 
-  // 이름은 크게 표시합니다.
   nameText.appendChild(
     el('span', '', parts.givenName)
   );
 
-  // 마지막 학생을 제외하고 쉼표를 붙입니다.
   if (index < names.length - 1) {
     nameText.appendChild(
       el('span', '', ',')
@@ -959,7 +961,6 @@ names.forEach(function (name, index) {
   nameGroup.appendChild(nameText);
 });
 
-// 안내 문장은 학생 수와 관계없이 한 번만 표시합니다.
 const messageText = el(
   'div',
   'call-message',
@@ -973,7 +974,6 @@ messageText.style.whiteSpace = 'nowrap';
 namesBox.appendChild(nameGroup);
 namesBox.appendChild(messageText);
 
-// 호출 인원에 따라 이름의 최대 크기를 조절합니다.
 const maxSize = names.length <= 1 ? 96
   : names.length === 2 ? 80
   : names.length === 3 ? 68
