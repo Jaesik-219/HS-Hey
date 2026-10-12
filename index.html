@@ -100,7 +100,7 @@
   const POLL_MS = 3000;   // 교실 화면 조회 간격(ms)
 
   const params = new URLSearchParams(location.search);
-  const mode = (params.get('mode') || 'classroom').toLowerCase();
+  const mode = (params.get('mode') || '2-5').toLowerCase();
   const app = document.getElementById('app');
 
   function el(tag, cls, text) {
