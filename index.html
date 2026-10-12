@@ -902,11 +902,23 @@
           lastKey = key;
           namesBox.textContent = '';
 
-      names.forEach(function (name) {
-  const parts = nameParts(name);
+// ===== 시작: 이름 묶음 + 안내 문장 1회 표시 =====
 
-  const line = el('div', 'call-line');
+// 이름들을 한 줄(길면 자동 줄바꿈)에 쉼표로 이어서 표시합니다.
+const nameGroup = el('div', 'call-group');
+nameGroup.style.display = 'flex';
+nameGroup.style.flexWrap = 'wrap';
+nameGroup.style.justifyContent = 'center';
+nameGroup.style.alignItems = 'baseline';
+nameGroup.style.gap = '0 0.35em';
+nameGroup.style.width = '100%';
+
+names.forEach(function (name, index) {
+  const parts = nameParts(name);
   const nameText = el('span', 'call-name');
+
+  nameText.style.whiteSpace = 'nowrap';
+  nameText.style.fontWeight = '900';
 
   // 성은 이름의 절반 크기로 표시합니다.
   if (parts.surname) {
@@ -922,33 +934,44 @@
     nameText.appendChild(surnameText);
   }
 
-  // 이름만 크게 표시하며, 아/야는 붙이지 않습니다.
+  // 이름은 크게 표시합니다.
   nameText.appendChild(
     el('span', '', parts.givenName)
   );
 
-  // 안내 문장은 이름의 절반 크기로 표시합니다.
-  const messageText = el(
-    'span',
-    'call-message',
-    '교무실로 오세요~'
-  );
+  // 마지막 학생을 제외하고 쉼표를 붙입니다.
+  if (index < names.length - 1) {
+    nameText.appendChild(
+      el('span', '', ',')
+    );
+  }
 
-  messageText.style.fontSize = '0.5em';
-  messageText.style.fontWeight = '700';
-
-  line.appendChild(nameText);
-  line.appendChild(messageText);
-  namesBox.appendChild(line);
+  nameGroup.appendChild(nameText);
 });
+
+// 안내 문장은 학생 수와 관계없이 한 번만 표시합니다.
+const messageText = el(
+  'div',
+  'call-message',
+  '교무실로 오세요~'
+);
+
+messageText.style.fontSize = '0.5em';
+messageText.style.fontWeight = '700';
+messageText.style.whiteSpace = 'nowrap';
+
+namesBox.appendChild(nameGroup);
+namesBox.appendChild(messageText);
 
 // 호출 인원에 따라 이름의 최대 크기를 조절합니다.
 const maxSize = names.length <= 1 ? 96
   : names.length === 2 ? 80
-  : names.length === 3 ? 64
-  : 48;
+  : names.length === 3 ? 68
+  : 52;
 
 namesBox.style.setProperty('--fs', maxSize + 'px');
+
+// ===== 끝: 이름 묶음 + 안내 문장 1회 표시 =====
 
 
           input = '';
