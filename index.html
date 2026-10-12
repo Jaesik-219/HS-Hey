@@ -904,6 +904,14 @@
 
 // ===== 시작: 이름 묶음 + 안내 문장 1회 표시 =====
 
+// 호출된 학생들 중 같은 이름(성 제외)이 몇 명인지 셉니다.
+const givenCount = {};
+
+names.forEach(function (name) {
+  const given = nameParts(name).givenName;
+  givenCount[given] = (givenCount[given] || 0) + 1;
+});
+
 // 이름들을 한 줄(길면 자동 줄바꿈)에 쉼표로 이어서 표시합니다.
 const nameGroup = el('div', 'call-group');
 nameGroup.style.display = 'flex';
@@ -920,8 +928,10 @@ names.forEach(function (name, index) {
   nameText.style.whiteSpace = 'nowrap';
   nameText.style.fontWeight = '900';
 
-  // 성은 이름의 절반 크기로 표시합니다.
-  if (parts.surname) {
+  // 이름이 겹치는 경우에만 성을 이름의 절반 크기로 표시합니다.
+  const isDuplicate = givenCount[parts.givenName] > 1;
+
+  if (parts.surname && isDuplicate) {
     const surnameText = el(
       'span',
       'call-family',
