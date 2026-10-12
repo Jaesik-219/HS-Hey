@@ -1,587 +1,1657 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>학생 호출</title>
-<style>
-  :root { --red:#dc2626; --ink:#111827; --line:#d1d5db; --blue:#2563eb; --gray:#6b7280; }
-  * { box-sizing: border-box; }
-  [hidden] { display: none !important; }
-  html, body { margin:0; height:100%; color:var(--ink); background:#fff;
-    font-family: Pretendard, -apple-system, "Malgun Gothic", "Segoe UI", sans-serif; }
-  button { font: inherit; cursor: pointer; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>학생 호출</title>
 
-  /* ---------- 교실 화면 ---------- */
-  .room { height:100vh; display:flex; flex-direction:column; position:relative; }
-  .idle-card { margin:auto; text-align:center; color:var(--gray); padding:16px; }
-  .idle-title { font-size:max(18px,3.4vmin); font-weight:700; color:var(--ink); }
-  .idle-sub { margin-top:6px; font-size:max(13px,2vmin); min-height:1.2em; }
-  .soundbtn { margin-top:10px; padding:6px 12px; border:1px solid var(--line); background:#fff; border-radius:8px; font-size:13px; }
+  <style>
+    :root {
+      --ink: #111827;
+      --gray: #6b7280;
+      --line: #d1d5db;
+      --blue: #2563eb;
+      --red: #dc2626;
+      --board: #174b3b;
+    }
 
-  .alert { flex:1; min-height:0; display:grid; grid-template-columns: 1fr 290px; }
-.names-panel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 2vmin;
-  overflow: hidden;
+    * {
+      box-sizing: border-box;
+    }
 
-  background: #dcfce7; /* 연한 초록색 배경 */
-  color: #000000;      /* 검은색 글씨 */
-}
-  .names-panel .label { font-size:max(18px,4vmin); font-weight:700; letter-spacing:.15em; }
- .names {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: .05em .5em;
+    [hidden] {
+      display: none !important;
+    }
 
-  color: #000000;
-  font-weight: 900;
-  font-size: var(--fs, 16vmin);
-  line-height: 1.15;
-  margin: 1vmin 0;
-}
-  .names .nm { white-space:nowrap; }
-  .names-panel .sub { font-size:max(20px,5vmin); font-weight:700; }
+    html,
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: #ffffff;
+      font-family:
+        Pretendard,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Malgun Gothic",
+        "Segoe UI",
+        sans-serif;
+    }
 
-  .pad-panel { padding:10px; display:flex; flex-direction:column; gap:8px;
-    background:#f3f4f6; border-left:1px solid var(--line); }
-  .pad-title { font-size:14px; font-weight:700; text-align:center; }
-  .display { height:48px; display:flex; align-items:center; justify-content:center;
-    background:#fff; border:1px solid var(--line); border-radius:8px;
-    font-size:28px; font-weight:700; letter-spacing:.15em; }
-  .display.empty { font-size:15px; font-weight:400; letter-spacing:0; color:var(--gray); }
-  .keys { flex:1; display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
-  .keys button { min-height:46px; font-size:24px; border:1px solid var(--line); background:#fff; border-radius:8px; }
-  .keys button:active { background:#e5e7eb; }
-  .keys .fn { font-size:17px; }
-  .keys .ok { background:var(--blue); color:#fff; border-color:var(--blue); }
-  .msg { min-height:22px; font-weight:700; text-align:center; font-size:15px; }
-  .msg.err { color:var(--red); animation: shake .3s; }
-  .msg.ok  { color:#15803d; }
-  @keyframes shake { 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
-  #conn { position:fixed; right:8px; bottom:4px; font-size:11px; color:#9ca3af; pointer-events:none; }
-  #conn.bad { color:var(--red); font-weight:700; }
+    button,
+    input,
+    select {
+      font: inherit;
+    }
 
-  @media (max-width: 700px) {
-    .alert { grid-template-columns:1fr; grid-template-rows:1fr auto; }
-    .pad-panel { border-left:0; border-top:1px solid var(--line); }
-    .keys { grid-template-columns:repeat(6,1fr); flex:none; }
-    .keys button { min-height:40px; font-size:20px; }
-    .pad-title { font-size:12px; }
-  }
+    button {
+      cursor: pointer;
+    }
 
-  /* ---------- 교사 화면 ---------- */
-  .t { max-width:760px; margin:0 auto; padding:16px; }
-  .t h1 { font-size:22px; margin:0 0 12px; }
-  .t h2 { font-size:16px; margin:0 0 8px; }
-  .box { border:1px solid var(--line); border-radius:8px; padding:12px; margin-bottom:12px; }
-  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-  .row.between { justify-content:space-between; }
-  .grow { flex:1; min-width:180px; }
-  .t input, .t select { padding:9px 10px; border:1px solid var(--line); border-radius:8px; font:inherit; }
-  .t button { padding:9px 14px; border:1px solid var(--line); background:#fff; border-radius:8px; }
-  .t button.primary { background:var(--blue); border-color:var(--blue); color:#fff; font-weight:700; }
-  .t button.big { width:100%; padding:14px; font-size:18px; margin-top:10px; }
-  .t button:disabled { opacity:.5; cursor:default; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(112px,1fr)); gap:6px; margin-top:10px; max-height:260px; overflow:auto; }
-  .stu { display:flex; flex-direction:column; align-items:flex-start; text-align:left; padding:6px 8px !important; }
-  .stu .no { font-size:11px; color:var(--gray); }
-  .stu .nm { font-size:16px; font-weight:700; }
-  .stu.on { background:#dbeafe !important; border-color:var(--blue) !important; }
-  .sel-line { margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:15px; }
-  .tmsg { min-height:20px; margin-top:8px; font-size:14px; }
-  .tmsg.err { color:var(--red); } .tmsg.ok { color:#15803d; }
-  .item { display:flex; justify-content:space-between; gap:8px; align-items:center; padding:8px 0; border-top:1px solid #eee; font-size:15px; }
-  .item:first-child { border-top:0; }
-  .item .meta { color:var(--gray); font-size:13px; }
-  .empty-note { color:var(--gray); font-size:14px; }
-</style>
+    button:disabled {
+      opacity: .55;
+      cursor: default;
+    }
+
+    /* =========================
+       교실 화면
+    ========================= */
+
+    .room {
+      height: 280px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .idle-card {
+      margin: auto;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .idle-title {
+      font-size: 24px;
+      font-weight: 800;
+    }
+
+    .idle-sub {
+      margin-top: 8px;
+      color: var(--gray);
+      font-size: 14px;
+    }
+
+    .soundbtn {
+      margin-top: 12px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #ffffff;
+      font-size: 13px;
+    }
+
+    .alert {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 240px;
+    }
+
+    .names-panel {
+      min-width: 0;
+      min-height: 0;
+      padding: 16px 22px;
+      overflow: auto;
+      background: var(--board);
+      color: #ffffff;
+    }
+
+    .board-inner {
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .board-label {
+      margin-bottom: 14px;
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: .12em;
+    }
+
+    .names {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      color: #ffffff;
+      font-size: clamp(26px, 3.6vw, var(--fs, 64px));
+      font-weight: 900;
+      line-height: 1.25;
+    }
+
+    .call-line {
+      max-width: 100%;
+      overflow-wrap: anywhere;
+    }
+
+    .surname {
+      font-size: .65em;
+      font-weight: 700;
+    }
+
+    .pad-panel {
+      min-height: 0;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      border-left: 1px solid var(--line);
+      background: #f3f4f6;
+    }
+
+    .pad-title {
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.35;
+      text-align: center;
+    }
+
+    .display {
+      height: 34px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #ffffff;
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: .12em;
+    }
+
+    .display.empty {
+      color: var(--gray);
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 0;
+    }
+
+    .keys {
+      flex: 1;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(4, minmax(0, 1fr));
+      gap: 4px;
+    }
+
+    .keys button {
+      min-height: 0;
+      padding: 3px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #ffffff;
+      color: var(--ink);
+      font-size: 20px;
+    }
+
+    .keys button:active {
+      background: #e5e7eb;
+    }
+
+    .keys .fn {
+      font-size: 14px;
+    }
+
+    .keys .ok {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: #ffffff;
+    }
+
+    .msg {
+      min-height: 16px;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 16px;
+      text-align: center;
+    }
+
+    .msg.err {
+      color: var(--red);
+    }
+
+    .msg.ok {
+      color: #15803d;
+    }
+
+    .conn {
+      position: absolute;
+      right: 7px;
+      bottom: 2px;
+      color: #6b7280;
+      font-size: 10px;
+      pointer-events: none;
+    }
+
+    .conn.bad {
+      padding: 2px 4px;
+      background: #ffffff;
+      color: var(--red);
+      font-weight: 700;
+    }
+
+    @media (max-width: 700px) {
+      .room {
+        height: auto;
+        min-height: 280px;
+      }
+
+      .alert {
+        grid-template-columns: 1fr;
+        grid-template-rows: minmax(150px, auto) auto;
+      }
+
+      .names-panel {
+        padding: 18px 12px;
+      }
+
+      .names {
+        font-size: clamp(24px, 5vw, 36px);
+      }
+
+      .pad-panel {
+        border-left: 0;
+        border-top: 1px solid var(--line);
+      }
+
+      .keys {
+        flex: none;
+        grid-template-columns: repeat(6, 1fr);
+        grid-template-rows: repeat(2, 34px);
+      }
+    }
+
+    /* =========================
+       교사 화면
+    ========================= */
+
+    .teacher {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .teacher h1 {
+      margin: 0 0 14px;
+      font-size: 22px;
+    }
+
+    .teacher h2 {
+      margin: 0 0 8px;
+      font-size: 16px;
+    }
+
+    .box {
+      margin-bottom: 12px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .between {
+      justify-content: space-between;
+    }
+
+    .grow {
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .teacher input,
+    .teacher select {
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .teacher button {
+      padding: 9px 14px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #ffffff;
+    }
+
+    .teacher button.primary {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: #ffffff;
+      font-weight: 700;
+    }
+
+    .teacher button.big {
+      width: 100%;
+      margin-top: 10px;
+      padding: 14px;
+      font-size: 18px;
+    }
+
+    .student-grid {
+      max-height: 260px;
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+      gap: 6px;
+      overflow: auto;
+    }
+
+    .teacher .student {
+      padding: 6px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: left;
+    }
+
+    .student .number {
+      color: var(--gray);
+      font-size: 11px;
+    }
+
+    .student .name {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .teacher .student.selected {
+      border-color: var(--blue);
+      background: #dbeafe;
+    }
+
+    .selection {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 15px;
+    }
+
+    .teacher-msg {
+      min-height: 20px;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+
+    .teacher-msg.err {
+      color: var(--red);
+    }
+
+    .teacher-msg.ok {
+      color: #15803d;
+    }
+
+    .item {
+      padding: 8px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      border-top: 1px solid #eeeeee;
+      font-size: 15px;
+    }
+
+    .item:first-child {
+      border-top: 0;
+    }
+
+    .meta,
+    .empty-note {
+      color: var(--gray);
+      font-size: 13px;
+    }
+
+    .toolbar {
+      margin-bottom: 12px;
+    }
+  </style>
 </head>
+
 <body>
-<div id="app"></div>
+  <div id="app"></div>
 
-<script>
-(function () {
-  'use strict';
+  <script>
+    (function () {
+      'use strict';
 
-  /* ★ 여기만 수정: Apps Script 웹 앱 URL */
-  const API_URL = 'https://script.google.com/macros/s/AKfycbyyaNGpeXgMLY7wZXrcRcHafpEYLM3dsIEy4PN6Sdz3o0AIaDxqNAIZEZKHfqWjKwgh/exec';
-  const POLL_MS = 3000;   // 교실 화면 조회 간격(ms)
+      /*
+       * 반드시 기존 index.html의 Apps Script 주소를 넣으세요.
+       * 주소는 https://script.google.com/macros/s/.../exec 형태입니다.
+       */
+      const API_URL = '여기에_기존_Apps_Script_웹앱_URL';
 
-  const params = new URLSearchParams(location.search);
-  const mode = (params.get('mode') || '2-5').toLowerCase();
-  const app = document.getElementById('app');
+      const POLL_MS = 3000;
+      const TEACHER_POLL_MS = 4000;
 
-  function el(tag, cls, text) {
-    const e = document.createElement(tag);
-    if (cls) e.className = cls;
-    if (text !== undefined) e.textContent = text;
-    return e;
-  }
+      const params = new URLSearchParams(location.search);
+      const mode = (params.get('mode') || 'classroom').toLowerCase();
+      const app = document.getElementById('app');
 
-  async function request(url, opt) {
-    const ctrl = new AbortController();
-    const timer = setTimeout(function () { ctrl.abort(); }, 10000);
-    try {
-      const res = await fetch(url, Object.assign({ signal: ctrl.signal, cache: 'no-store' }, opt));
-      return await res.json();
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-  function apiGet(q) {
-    q._t = Date.now();
-    return request(API_URL + '?' + new URLSearchParams(q));
-  }
-  function apiPost(body) {
-    // text/plain: CORS 사전 요청(preflight)을 피하기 위함
-    return request(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(body)
-    });
-  }
-  function fmtTime(ms) {
-    return new Date(ms).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
-  }
+      function el(tag, className, text) {
+        const node = document.createElement(tag);
 
-  /* =====================================================
-     교실 화면
-  ===================================================== */
-  function startClassroom() {
-    const cls = (params.get('class') || '').trim();
-    if (!cls) {
-      app.textContent = '주소 끝에 ?mode=classroom&class=3-2 처럼 학급을 지정하세요.';
-      return;
-    }
-
-    app.innerHTML =
-      '<div class="room">' +
-      '  <div class="idle-card" id="idle">' +
-      '    <div class="idle-title" id="idleTitle">호출 대기 중</div>' +
-      '    <div class="idle-sub" id="idleSub"></div>' +
-      '    <button class="soundbtn" id="soundBtn">알림음 켜기</button>' +
-      '  </div>' +
-      '  <div class="alert" id="alert" hidden>' +
-      '    <div class="names-panel">' +
-      '      <div class="label">학생 호출</div>' +
-      '      <div class="names" id="names"></div>' +
-      '      <div class="sub">교무실로 오세요</div>' +
-      '    </div>' +
-      '    <div class="pad-panel">' +
-      '      <div class="pad-title">호출된 학생 중 1명이<br>학번을 누르고 확인을 누르세요</div>' +
-      '      <div class="display empty" id="display">학번 입력</div>' +
-      '      <div class="keys" id="keys"></div>' +
-      '      <div class="msg" id="msg"></div>' +
-      '    </div>' +
-      '  </div>' +
-      '  <div id="conn"></div>' +
-      '</div>';
-
-    const $ = function (id) { return document.getElementById(id); };
-    const idle = $('idle'), alertEl = $('alert'), namesEl = $('names');
-    const display = $('display'), msgEl = $('msg'), conn = $('conn');
-
-    let state = { calls: [] };
-    let lastKey = '';
-    let input = '';
-    let busy = false;
-    let beepTimer = null, msgTimer = null, inputTimer = null, noticeUntil = 0;
-
-    /* --- 알림음 --- */
-    let audioCtx = null;
-    function ensureAudio() {
-      try {
-        if (!audioCtx) {
-          const AC = window.AudioContext || window.webkitAudioContext;
-          if (AC) audioCtx = new AC();
+        if (className) {
+          node.className = className;
         }
-        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-      } catch (e) { /* 무시 */ }
-    }
-    function beep() {
-      if (!audioCtx || audioCtx.state !== 'running') return;
-      [880, 1175].forEach(function (f, i) {
-        const o = audioCtx.createOscillator();
-        const g = audioCtx.createGain();
-        const t = audioCtx.currentTime + i * 0.28;
-        o.type = 'sine';
-        o.frequency.value = f;
-        g.gain.setValueAtTime(0.25, t);
-        g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
-        o.connect(g);
-        g.connect(audioCtx.destination);
-        o.start(t);
-        o.stop(t + 0.26);
-      });
-    }
-    document.addEventListener('pointerdown', ensureAudio);
-    ensureAudio();
-    $('soundBtn').onclick = function () {
-      ensureAudio();
-      setTimeout(beep, 150);
-      $('soundBtn').textContent = '알림음 켜짐 (테스트음 재생)';
-    };
 
-    /* --- 키패드 --- */
-    const labels = ['1','2','3','4','5','6','7','8','9','지움','0','확인'];
-    labels.forEach(function (k) {
-      const b = el('button', k === '확인' ? 'ok fn' : (k === '지움' ? 'fn' : ''), k);
-      b.type = 'button';
-      b.addEventListener('click', function () { press(k); });
-      $('keys').appendChild(b);
-    });
-
-    function updateDisplay() {
-      if (input) { display.textContent = input; display.classList.remove('empty'); }
-      else { display.textContent = '학번 입력'; display.classList.add('empty'); }
-    }
-    function setMsg(text, type) {
-      msgEl.textContent = text || '';
-      msgEl.className = 'msg' + (type ? ' ' + type : '');
-      clearTimeout(msgTimer);
-      if (text) msgTimer = setTimeout(function () { setMsg(''); }, 4000);
-    }
-    function press(k) {
-      clearTimeout(inputTimer);
-      if (k === '지움') input = input.slice(0, -1);
-      else if (k === '확인') { submit(); return; }
-      else if (input.length < 10) input += k;
-      updateDisplay();
-      inputTimer = setTimeout(function () { input = ''; updateDisplay(); }, 20000);
-    }
-    async function submit() {
-      if (!input || busy) return;
-      busy = true;
-      const num = input;
-      input = '';
-      updateDisplay();
-      try {
-        const r = await apiPost({ action: 'dismiss', class: cls, number: num });
-        if (r.ok) {
-          noticeUntil = Date.now() + 6000;
-          setMsg('확인되었습니다', 'ok');
-          await poll();
-        } else {
-          setMsg(r.error || '확인할 수 없습니다.', 'err');
+        if (text !== undefined) {
+          node.textContent = text;
         }
-      } catch (e) {
-        setMsg('통신 오류입니다. 다시 눌러 주세요.', 'err');
-      } finally {
-        busy = false;
+
+        return node;
       }
-    }
 
-    /* --- 화면 갱신 --- */
-    function fontSize(n) {
-      return n <= 1 ? 16 : n === 2 ? 13 : n <= 4 ? 10 : n <= 6 ? 8 : n <= 9 ? 6.5 : 5;
-    }
-    function render() {
-      const names = [];
-      state.calls.forEach(function (c) {
-        c.names.forEach(function (n) { if (names.indexOf(n) < 0) names.push(n); });
-      });
-      const key = state.calls.map(function (c) { return c.id; }).sort().join(',');
-      const active = names.length > 0;
-
-      idle.hidden = active;
-      alertEl.hidden = !active;
-
-      if (!active) {
-        lastKey = '';
-        clearInterval(beepTimer);
-        beepTimer = null;
-        $('idleTitle').textContent = Date.now() < noticeUntil
-          ? '확인되었습니다. 교무실로 가 주세요.' : '호출 대기 중';
-        return;
+      function $(id) {
+        return document.getElementById(id);
       }
-      if (key !== lastKey) {
-        lastKey = key;
-        namesEl.textContent = '';
-        names.forEach(function (n) { namesEl.appendChild(el('span', 'nm', n)); });
-        namesEl.style.setProperty('--fs', fontSize(names.length) + 'vmin');
-        input = '';
-        updateDisplay();
-        setMsg('');
-        beep();
-        clearInterval(beepTimer);
-        beepTimer = setInterval(beep, 4000);
-      }
-    }
 
-    async function poll() {
-      try {
-        const r = await apiGet({ class: cls });
-        if (r && r.ok) {
-          state = r.state;
-          conn.textContent = fmtTime(Date.now()) + ' 확인';
-          conn.className = '';
-          $('idleSub').textContent = '';
+      async function request(url, options) {
+        const controller = new AbortController();
+
+        const timeout = setTimeout(function () {
+          controller.abort();
+        }, 15000);
+
+        try {
+          const response = await fetch(
+            url,
+            Object.assign(
+              {
+                signal: controller.signal,
+                cache: 'no-store'
+              },
+              options || {}
+            )
+          );
+
+          if (!response.ok) {
+            throw new Error('HTTP ' + response.status);
+          }
+
+          return await response.json();
+        } finally {
+          clearTimeout(timeout);
+        }
+      }
+
+      function apiGet(query) {
+        const data = Object.assign({}, query, {
+          _t: Date.now()
+        });
+
+        return request(
+          API_URL + '?' + new URLSearchParams(data).toString()
+        );
+      }
+
+      function apiPost(body) {
+        return request(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'text/plain;charset=utf-8'
+          },
+          body: JSON.stringify(body)
+        });
+      }
+
+      function fmtTime(ms) {
+        if (!ms) {
+          return '';
+        }
+
+        return new Date(ms).toLocaleTimeString('ko-KR', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
+      }
+
+      function savedClass() {
+        try {
+          return localStorage.getItem('callClass') || '';
+        } catch (error) {
+          return '';
+        }
+      }
+
+      function saveClass(value) {
+        try {
+          localStorage.setItem('callClass', value);
+        } catch (error) {
+          // 브라우저 저장소가 차단되어도 호출 기능은 사용합니다.
+        }
+      }
+
+      /* =========================
+         이름과 호격 조사
+      ========================= */
+
+      function nameParts(fullName) {
+        const name = String(fullName || '').trim();
+
+        if (!name) {
+          return {
+            surname: '',
+            givenName: '',
+            ending: ''
+          };
+        }
+
+        // 기본적으로 한 글자 성으로 구분합니다.
+        const surname = name.length > 1 ? name.slice(0, 1) : '';
+        const givenName = name.length > 1 ? name.slice(1) : name;
+
+        const lastCode = givenName.charCodeAt(givenName.length - 1);
+        let ending = '';
+
+        if (lastCode >= 0xAC00 && lastCode <= 0xD7A3) {
+          const hasBatchim = (lastCode - 0xAC00) % 28 !== 0;
+          ending = hasBatchim ? '아' : '야';
+        }
+
+        return {
+          surname: surname,
+          givenName: givenName,
+          ending: ending
+        };
+      }
+
+      /* =========================
+         교실 화면
+      ========================= */
+
+      function startClassroom() {
+        const cls = (params.get('class') || '').trim();
+
+        if (!cls) {
+          app.textContent =
+            '주소 끝에 ?mode=classroom&class=2-5 처럼 학급을 지정하세요.';
+          return;
+        }
+
+        app.innerHTML = `
+          <main class="room">
+            <section class="idle-card" id="idle">
+              <div class="idle-title" id="idleTitle">
+                호출 대기 중
+              </div>
+
+              <div class="idle-sub" id="idleSub"></div>
+
+              <button class="soundbtn" id="soundBtn" type="button">
+                알림음 켜기
+              </button>
+            </section>
+
+            <section class="alert" id="alert" hidden>
+              <div class="names-panel">
+                <div class="board-inner">
+                  <div class="board-label">학생 호출</div>
+                  <div class="names" id="names"></div>
+                </div>
+              </div>
+
+              <div class="pad-panel">
+                <div class="pad-title">
+                  호출된 학생 중 1명이<br>
+                  학번을 누르고 확인을 누르세요
+                </div>
+
+                <div class="display empty" id="display">
+                  학번 입력
+                </div>
+
+                <div class="keys" id="keys"></div>
+                <div class="msg" id="msg" role="status"></div>
+              </div>
+            </section>
+
+            <div class="conn" id="conn"></div>
+          </main>
+        `;
+
+        $('idleSub').textContent = cls + '반';
+
+        const idle = $('idle');
+        const alertBox = $('alert');
+        const namesBox = $('names');
+        const display = $('display');
+        const messageBox = $('msg');
+        const connection = $('conn');
+
+        let state = {
+          calls: []
+        };
+
+        let lastKey = '';
+        let input = '';
+        let submitting = false;
+        let beepTimer = null;
+        let messageTimer = null;
+        let inputTimer = null;
+        let noticeUntil = 0;
+        let audioContext = null;
+
+        // 学生画面の状態取得と確認送信の競合を防ぎます。
+        let serverBusy = false;
+
+        async function enableAudio() {
+          try {
+            const AudioClass =
+              window.AudioContext || window.webkitAudioContext;
+
+            if (!AudioClass) {
+              return false;
+            }
+
+            if (!audioContext) {
+              audioContext = new AudioClass();
+            }
+
+            if (audioContext.state === 'suspended') {
+              await audioContext.resume();
+            }
+
+            return audioContext.state === 'running';
+          } catch (error) {
+            return false;
+          }
+        }
+
+        function beep() {
+          if (!audioContext || audioContext.state !== 'running') {
+            return;
+          }
+
+          [880, 1175].forEach(function (frequency, index) {
+            const oscillator = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            const time = audioContext.currentTime + index * 0.28;
+
+            oscillator.type = 'sine';
+            oscillator.frequency.value = frequency;
+
+            gain.gain.setValueAtTime(0.15, time);
+            gain.gain.exponentialRampToValueAtTime(
+              0.001,
+              time + 0.25
+            );
+
+            oscillator.connect(gain);
+            gain.connect(audioContext.destination);
+
+            oscillator.start(time);
+            oscillator.stop(time + 0.26);
+          });
+        }
+
+        document.addEventListener('pointerdown', function () {
+          enableAudio();
+        });
+
+        $('soundBtn').onclick = async function () {
+          const enabled = await enableAudio();
+
+          if (enabled) {
+            beep();
+            $('soundBtn').textContent = '알림음 켜짐';
+          } else {
+            $('soundBtn').textContent =
+              '소리 재생이 차단되었습니다';
+          }
+        };
+
+        function updateDisplay() {
+          display.textContent = input || '학번 입력';
+          display.classList.toggle('empty', !input);
+        }
+
+        function setMessage(text, type) {
+          clearTimeout(messageTimer);
+
+          messageBox.textContent = text || '';
+          messageBox.className =
+            'msg' + (type ? ' ' + type : '');
+
+          if (text) {
+            messageTimer = setTimeout(function () {
+              setMessage('');
+            }, 4000);
+          }
+        }
+
+        function press(key) {
+          if (submitting) {
+            return;
+          }
+
+          clearTimeout(inputTimer);
+
+          if (key === '지움') {
+            input = input.slice(0, -1);
+          } else if (key === '확인') {
+            submit();
+            return;
+          } else if (input.length < 10) {
+            input += key;
+          }
+
+          updateDisplay();
+
+          inputTimer = setTimeout(function () {
+            input = '';
+            updateDisplay();
+          }, 20000);
+        }
+
+        const keyLabels = [
+          '1', '2', '3',
+          '4', '5', '6',
+          '7', '8', '9',
+          '지움', '0', '확인'
+        ];
+
+        keyLabels.forEach(function (key) {
+          const className = key === '확인'
+            ? 'ok fn'
+            : key === '지움'
+              ? 'fn'
+              : '';
+
+          const button = el('button', className, key);
+          button.type = 'button';
+
+          button.onclick = function () {
+            press(key);
+          };
+
+          $('keys').appendChild(button);
+        });
+
+        // 노트북 키보드로도 학번을 입력할 수 있습니다.
+        document.addEventListener('keydown', function (event) {
+          if (alertBox.hidden || event.ctrlKey || event.metaKey ||
+              event.altKey || event.repeat) {
+            return;
+          }
+
+          if (/^[0-9]$/.test(event.key)) {
+            event.preventDefault();
+            press(event.key);
+          } else if (event.key === 'Backspace') {
+            event.preventDefault();
+            press('지움');
+          } else if (event.key === 'Enter') {
+            event.preventDefault();
+            press('확인');
+          }
+        });
+
+        function render() {
+          const names = [];
+
+          state.calls.forEach(function (call) {
+            call.names.forEach(function (name) {
+              if (names.indexOf(name) < 0) {
+                names.push(name);
+              }
+            });
+          });
+
+          const key = JSON.stringify({
+            ids: state.calls.map(function (call) {
+              return call.id;
+            }).sort(),
+            names: names
+          });
+
+          const active = names.length > 0;
+
+          idle.hidden = active;
+          alertBox.hidden = !active;
+
+          if (!active) {
+            lastKey = '';
+
+            clearInterval(beepTimer);
+            beepTimer = null;
+
+            $('idleTitle').textContent =
+              Date.now() < noticeUntil
+                ? '확인되었습니다. 교무실로 가 주세요.'
+                : '호출 대기 중';
+
+            return;
+          }
+
+          if (key === lastKey) {
+            return;
+          }
+
+          lastKey = key;
+          namesBox.textContent = '';
+
+          names.forEach(function (name) {
+            const parts = nameParts(name);
+            const line = el('div', 'call-line');
+
+            if (parts.surname) {
+              line.appendChild(
+                el('span', 'surname', '(' + parts.surname + ')')
+              );
+            }
+
+            line.appendChild(
+              el(
+                'span',
+                '',
+                parts.givenName +
+                  parts.ending +
+                  ' 교무실로 와라~'
+              )
+            );
+
+            namesBox.appendChild(line);
+          });
+
+          const maxSize = names.length <= 1 ? 64
+            : names.length === 2 ? 56
+            : names.length === 3 ? 46
+            : 36;
+
+          namesBox.style.setProperty('--fs', maxSize + 'px');
+
+          input = '';
+          updateDisplay();
+          setMessage('');
+
+          beep();
+          clearInterval(beepTimer);
+          beepTimer = setInterval(beep, 4000);
+        }
+
+        async function loadState() {
+          const result = await apiGet({
+            class: cls
+          });
+
+          if (!result || !result.ok || !result.state) {
+            throw new Error(
+              result && result.error
+                ? result.error
+                : '호출 상태를 가져오지 못했습니다.'
+            );
+          }
+
+          state = result.state;
+
+          connection.textContent =
+            fmtTime(Date.now()) + ' 확인';
+          connection.className = 'conn';
+
           render();
-        } else {
-          throw new Error((r && r.error) || 'bad response');
         }
-      } catch (e) {
-        // 통신 실패 시 마지막 상태를 유지 (호출 중이던 화면이 사라지지 않음)
-        conn.textContent = '연결 끊김 - 재시도 중';
-        conn.className = 'bad';
-      }
-    }
-    (async function loop() {
-      await poll();
-      setTimeout(loop, POLL_MS);
-    })();
-  }
 
-  /* =====================================================
-     교사 화면
-  ===================================================== */
-  function startTeacher() {
-    app.innerHTML =
-      '<div class="t">' +
-      '  <h1>학생 호출 · 교사용</h1>' +
-      '  <section class="box" id="loginBox">' +
-      '    <div class="row"><input id="pw" type="password" placeholder="교사용 비밀번호" class="grow" autocomplete="current-password">' +
-      '    <button class="primary" id="loginBtn">로그인</button></div>' +
-      '    <div class="tmsg err" id="loginMsg"></div>' +
-      '  </section>' +
-      '  <div id="mainBox" hidden>' +
-      '    <div class="row between" style="margin-bottom:12px">' +
-      '      <div class="row"><label for="clsSel">학급</label><select id="clsSel"></select></div>' +
-      '      <button id="logoutBtn">로그아웃</button>' +
-      '    </div>' +
-      '    <section class="box">' +
-      '      <div class="row"><input id="q" class="grow" placeholder="이름·학번 입력 후 Enter (여러 명은 쉼표로 구분)">' +
-      '      <button id="addBtn">추가</button></div>' +
-      '      <div class="grid" id="grid"></div>' +
-      '      <div class="sel-line"><b>선택:</b><span id="selList">없음</span><button id="clearBtn">선택 해제</button></div>' +
-      '      <button class="primary big" id="callBtn">호출하기</button>' +
-      '      <div class="tmsg" id="tmsg"></div>' +
-      '    </section>' +
-      '    <section class="box">' +
-      '      <div class="row between"><h2>호출 중</h2><button id="cancelAll">모두 취소</button></div>' +
-      '      <div id="active"></div>' +
-      '    </section>' +
-      '    <section class="box"><h2>최근 기록</h2><div id="recent"></div></section>' +
-      '  </div>' +
-      '</div>';
+        async function poll() {
+          if (serverBusy) {
+            return;
+          }
 
-    const $ = function (id) { return document.getElementById(id); };
-    let pw = localStorage.getItem('callPw') || '';
-    let cls = localStorage.getItem('callClass') || '';
-    let roster = [], rosterKey = '', timer = null;
-    const selected = new Set();
+          serverBusy = true;
 
-    function say(text, type) {
-      $('tmsg').textContent = text || '';
-      $('tmsg').className = 'tmsg' + (type ? ' ' + type : '');
-    }
-
-    function showLogin(msg) {
-      clearInterval(timer);
-      timer = null;
-      $('mainBox').hidden = true;
-      $('loginBox').hidden = false;
-      $('loginMsg').textContent = msg || '';
-    }
-    function logout(msg) {
-      pw = '';
-      localStorage.removeItem('callPw');
-      showLogin(msg);
-    }
-
-    async function api(body) {
-      body.password = pw;
-      body.class = cls;
-      const r = await apiPost(body);
-      if (!r.ok && r.code === 'auth') logout('비밀번호가 올바르지 않습니다.');
-      return r;
-    }
-
-    async function enter(silent) {
-      let r;
-      try {
-        r = await apiPost({ action: 'init', password: pw });
-      } catch (e) {
-        $('loginMsg').textContent = '서버에 연결할 수 없습니다. API_URL을 확인하세요.';
-        return;
-      }
-      if (!r.ok) {
-        pw = '';
-        localStorage.removeItem('callPw');
-        $('loginMsg').textContent = silent ? '' : (r.error || '로그인 실패');
-        return;
-      }
-      localStorage.setItem('callPw', pw);
-      $('loginBox').hidden = true;
-      $('mainBox').hidden = false;
-
-      const sel = $('clsSel');
-      sel.textContent = '';
-      r.classes.forEach(function (c) {
-        const o = el('option', '', c);
-        o.value = c;
-        sel.appendChild(o);
-      });
-      if (r.classes.indexOf(cls) < 0) cls = r.classes[0] || '';
-      sel.value = cls;
-      localStorage.setItem('callClass', cls);
-
-      await refresh();
-      clearInterval(timer);
-      timer = setInterval(refresh, 4000);
-    }
-
-    async function refresh() {
-      if (!cls) return;
-      let r;
-      try { r = await api({ action: 'state' }); }
-      catch (e) { say('서버에 연결할 수 없습니다.', 'err'); return; }
-      if (!r.ok) return;
-      const k = JSON.stringify(r.roster);
-      if (k !== rosterKey) { rosterKey = k; roster = r.roster; renderGrid(); }
-      renderActive(r.active);
-      renderRecent(r.recent);
-    }
-
-    /* --- 학생 선택 --- */
-    function renderSelected() {
-      const names = roster.filter(function (s) { return selected.has(s.number); })
-        .map(function (s) { return s.name; });
-      $('selList').textContent = names.length ? names.join(', ') : '없음';
-    }
-    function renderGrid() {
-      const f = $('q').value.trim();
-      const g = $('grid');
-      g.textContent = '';
-      roster.filter(function (s) {
-        return !f || s.name.indexOf(f) >= 0 || s.number.indexOf(f) >= 0;
-      }).forEach(function (s) {
-        const b = el('button', 'stu' + (selected.has(s.number) ? ' on' : ''));
-        b.type = 'button';
-        b.appendChild(el('span', 'no', s.number));
-        b.appendChild(el('span', 'nm', s.name));
-        b.onclick = function () {
-          if (selected.has(s.number)) selected.delete(s.number); else selected.add(s.number);
-          renderGrid();
-        };
-        g.appendChild(b);
-      });
-      renderSelected();
-    }
-    function addFromInput() {
-      const tokens = $('q').value.split(/[,\s，、]+/).filter(Boolean);
-      if (!tokens.length) return;
-      const problems = [];
-      let firstUnresolved = '';
-      tokens.forEach(function (t) {
-        let m = roster.filter(function (s) { return s.name === t || s.number === t; });
-        if (!m.length) m = roster.filter(function (s) { return s.name.indexOf(t) >= 0; });
-        if (m.length === 1) selected.add(m[0].number);
-        else {
-          problems.push(t + (m.length ? ' (여러 명 - 아래 명단에서 선택)' : ' (명단에 없음)'));
-          if (!firstUnresolved) firstUnresolved = t;
+          try {
+            await loadState();
+          } catch (error) {
+            connection.textContent = '연결 오류 · 재시도 중';
+            connection.className = 'conn bad';
+          } finally {
+            serverBusy = false;
+          }
         }
-      });
-      $('q').value = firstUnresolved;
-      renderGrid();
-      say(problems.length ? '확인 필요: ' + problems.join(', ') : '', problems.length ? 'err' : '');
-    }
 
-    /* --- 호출 중 / 기록 --- */
-    function renderActive(list) {
-      const box = $('active');
-      box.textContent = '';
-      $('cancelAll').hidden = list.length === 0;
-      if (!list.length) { box.appendChild(el('div', 'empty-note', '현재 호출 중인 학생이 없습니다.')); return; }
-      list.forEach(function (c) {
-        const row = el('div', 'item');
-        const left = el('div');
-        left.appendChild(el('div', '', c.names.join(', ')));
-        left.appendChild(el('div', 'meta', fmtTime(c.createdAt) + ' 호출 · 학생 확인 대기 중'));
-        const b = el('button', '', '취소');
-        b.onclick = async function () {
-          b.disabled = true;
-          try { await api({ action: 'cancel', id: c.id }); } catch (e) { say('전송 실패', 'err'); }
-          refresh();
-        };
-        row.appendChild(left);
-        row.appendChild(b);
-        box.appendChild(row);
-      });
-    }
-    function renderRecent(list) {
-      const box = $('recent');
-      box.textContent = '';
-      if (!list.length) { box.appendChild(el('div', 'empty-note', '기록이 없습니다.')); return; }
-      list.forEach(function (c) {
-        const row = el('div', 'item');
-        const left = el('div');
-        left.appendChild(el('div', '', c.names.join(', ')));
-        let st = '';
-        if (c.status === 'dismissed') st = '확인됨 (' + c.closedBy + ', ' + fmtTime(c.closedAt) + ')';
-        else if (c.status === 'cancelled') st = '교사가 취소';
-        else st = '시간 만료';
-        left.appendChild(el('div', 'meta', fmtTime(c.createdAt) + ' 호출 · ' + st));
-        row.appendChild(left);
-        box.appendChild(row);
-      });
-    }
+        async function submit() {
+          if (!input || submitting) {
+            return;
+          }
 
-    /* --- 이벤트 --- */
-    $('loginBtn').onclick = function () { pw = $('pw').value; enter(false); };
-    $('pw').addEventListener('keydown', function (e) { if (e.key === 'Enter') $('loginBtn').click(); });
-    $('logoutBtn').onclick = function () { logout(''); };
-    $('clsSel').onchange = function (e) {
-      cls = e.target.value;
-      localStorage.setItem('callClass', cls);
-      selected.clear();
-      rosterKey = '';
-      refresh();
-    };
-    $('q').addEventListener('input', renderGrid);
-    $('q').addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' && !e.isComposing) addFromInput();
-    });
-    $('addBtn').onclick = addFromInput;
-    $('clearBtn').onclick = function () { selected.clear(); renderGrid(); };
-    $('cancelAll').onclick = async function () {
-      if (!confirm('이 학급의 호출을 모두 취소할까요?')) return;
-      try { await api({ action: 'cancel' }); } catch (e) { say('전송 실패', 'err'); }
-      refresh();
-    };
-    $('callBtn').onclick = async function () {
-      if (!selected.size) { say('호출할 학생을 선택하세요.', 'err'); return; }
-      const btn = $('callBtn');
-      btn.disabled = true;
-      try {
-        const r = await api({ action: 'call', numbers: Array.from(selected) });
-        if (r.ok) {
-          say('호출했습니다: ' + r.names.join(', '), 'ok');
+          if (serverBusy) {
+            setMessage('잠시 후 확인을 다시 눌러 주세요.');
+            return;
+          }
+
+          submitting = true;
+          serverBusy = true;
+
+          const number = input;
+          input = '';
+
+          clearTimeout(inputTimer);
+          updateDisplay();
+          setMessage('확인 중…');
+
+          try {
+            const result = await apiPost({
+              action: 'dismiss',
+              class: cls,
+              number: number
+            });
+
+            if (!result.ok) {
+              setMessage(
+                result.error || '확인할 수 없습니다.',
+                'err'
+              );
+              return;
+            }
+
+            noticeUntil = Date.now() + 6000;
+            setMessage('확인되었습니다.', 'ok');
+
+            try {
+              await loadState();
+            } catch (error) {
+              setMessage(
+                '확인 완료 · 화면 갱신을 기다려 주세요.',
+                'ok'
+              );
+
+              connection.textContent = '연결 오류 · 재시도 중';
+              connection.className = 'conn bad';
+            }
+          } catch (error) {
+            setMessage(
+              '통신 오류입니다. 다시 확인해 주세요.',
+              'err'
+            );
+          } finally {
+            submitting = false;
+            serverBusy = false;
+          }
+        }
+
+        async function loop() {
+          await poll();
+          setTimeout(loop, POLL_MS);
+        }
+
+        loop();
+      }
+
+      /* =========================
+         교사 화면
+      ========================= */
+
+      function startTeacher() {
+        app.innerHTML = `
+          <main class="teacher">
+            <h1>학생 호출 · 교사용</h1>
+
+            <section class="box" id="loginBox">
+              <div class="row">
+                <input
+                  id="pw"
+                  class="grow"
+                  type="password"
+                  placeholder="교사용 비밀번호"
+                  autocomplete="current-password"
+                >
+
+                <button
+                  class="primary"
+                  id="loginBtn"
+                  type="button"
+                >
+                  로그인
+                </button>
+              </div>
+
+              <div
+                class="teacher-msg err"
+                id="loginMsg"
+                role="status"
+              ></div>
+            </section>
+
+            <div id="mainBox" hidden>
+              <div class="row between toolbar">
+                <div class="row">
+                  <label for="clsSel">학급</label>
+                  <select id="clsSel"></select>
+                </div>
+
+                <button id="logoutBtn" type="button">
+                  로그아웃
+                </button>
+              </div>
+
+              <section class="box">
+                <div class="row">
+                  <input
+                    id="query"
+                    class="grow"
+                    placeholder="이름·학번 입력 후 Enter (여러 명은 쉼표로 구분)"
+                  >
+
+                  <button id="addBtn" type="button">
+                    추가
+                  </button>
+                </div>
+
+                <div class="student-grid" id="grid"></div>
+
+                <div class="selection">
+                  <b>선택:</b>
+                  <span id="selectedList">없음</span>
+
+                  <button id="clearBtn" type="button">
+                    선택 해제
+                  </button>
+                </div>
+
+                <button
+                  class="primary big"
+                  id="callBtn"
+                  type="button"
+                >
+                  호출하기
+                </button>
+
+                <div
+                  class="teacher-msg"
+                  id="teacherMsg"
+                  role="status"
+                ></div>
+              </section>
+
+              <section class="box">
+                <div class="row between">
+                  <h2>호출 중</h2>
+
+                  <button id="cancelAll" type="button">
+                    모두 취소
+                  </button>
+                </div>
+
+                <div id="active"></div>
+              </section>
+
+              <section class="box">
+                <h2>최근 기록</h2>
+                <div id="recent"></div>
+              </section>
+            </div>
+          </main>
+        `;
+
+        // 비밀번호는 브라우저 저장소에 저장하지 않습니다.
+        let password = '';
+        let cls = savedClass();
+        let roster = [];
+        let rosterKey = '';
+        let timer = null;
+        let refreshing = false;
+        let sessionVersion = 0;
+
+        const selected = new Set();
+
+        // 이전 버전에서 저장한 비밀번호가 있으면 제거합니다.
+        try {
+          localStorage.removeItem('callPw');
+        } catch (error) {
+          // 저장소 접근이 차단된 경우 무시합니다.
+        }
+
+        function say(text, type) {
+          $('teacherMsg').textContent = text || '';
+          $('teacherMsg').className =
+            'teacher-msg' + (type ? ' ' + type : '');
+        }
+
+        function logout(message) {
+          sessionVersion += 1;
+          password = '';
+
+          clearTimeout(timer);
+          timer = null;
+
           selected.clear();
-          $('q').value = '';
-          renderGrid();
-          refresh();
-        } else if (r.code !== 'auth') {
-          say(r.error || '호출 실패', 'err');
+
+          $('mainBox').hidden = true;
+          $('loginBox').hidden = false;
+          $('loginMsg').textContent = message || '';
+          $('pw').value = '';
         }
-      } catch (e) {
-        say('전송 실패. 다시 시도하세요.', 'err');
-      } finally {
-        btn.disabled = false;
+
+        async function teacherApi(body, targetClass) {
+          const result = await apiPost(
+            Object.assign({}, body, {
+              password: password,
+              class: targetClass === undefined ? cls : targetClass
+            })
+          );
+
+          if (!result.ok && result.code === 'auth') {
+            logout('ビ밀번호가 올바르지 않습니다.'.replace('ビ', '비'));
+          }
+
+          return result;
+        }
+
+        function renderSelected() {
+          const names = roster.filter(function (student) {
+            return selected.has(student.number);
+          }).map(function (student) {
+            return student.name;
+          });
+
+          $('selectedList').textContent =
+            names.length ? names.join(', ') : '없음';
+        }
+
+        function renderGrid() {
+          const filter = $('query').value.trim();
+          const grid = $('grid');
+
+          grid.textContent = '';
+
+          roster.filter(function (student) {
+            return !filter ||
+              student.name.indexOf(filter) >= 0 ||
+              student.number.indexOf(filter) >= 0;
+          }).forEach(function (student) {
+            const button = el(
+              'button',
+              'student' +
+                (selected.has(student.number) ? ' selected' : '')
+            );
+
+            button.type = 'button';
+
+            button.appendChild(
+              el('span', 'number', student.number)
+            );
+
+            button.appendChild(
+              el('span', 'name', student.name)
+            );
+
+            button.onclick = function () {
+              if (selected.has(student.number)) {
+                selected.delete(student.number);
+              } else {
+                selected.add(student.number);
+              }
+
+              renderGrid();
+            };
+
+            grid.appendChild(button);
+          });
+
+          renderSelected();
+        }
+
+        function addFromInput() {
+          const tokens = $('query').value
+            .split(/[,\s，、]+/)
+            .filter(Boolean);
+
+          if (!tokens.length) {
+            return;
+          }
+
+          const problems = [];
+          let unresolved = '';
+
+          tokens.forEach(function (token) {
+            let matches = roster.filter(function (student) {
+              return student.name === token ||
+                student.number === token;
+            });
+
+            if (!matches.length) {
+              matches = roster.filter(function (student) {
+                return student.name.indexOf(token) >= 0;
+              });
+            }
+
+            if (matches.length === 1) {
+              selected.add(matches[0].number);
+            } else {
+              problems.push(
+                token + (
+                  matches.length
+                    ? ' (여러 명: 명단에서 선택하세요)'
+                    : ' (명단에 없습니다)'
+                )
+              );
+
+              if (!unresolved) {
+                unresolved = token;
+              }
+            }
+          });
+
+          $('query').value = unresolved;
+          renderGrid();
+
+          say(
+            problems.length
+              ? '확인 필요: ' + problems.join(', ')
+              : '',
+            problems.length ? 'err' : ''
+          );
+        }
+
+        function renderActive(list) {
+          const box = $('active');
+          box.textContent = '';
+
+          $('cancelAll').hidden = !list.length;
+
+          if (!list.length) {
+            box.appendChild(
+              el(
+                'div',
+                'empty-note',
+                '현재 호출 중인 학생이 없습니다.'
+              )
+            );
+            return;
+          }
+
+          list.forEach(function (call) {
+            const row = el('div', 'item');
+            const left = el('div');
+            const button = el('button', '', '취소');
+
+            left.appendChild(
+              el('div', '', call.names.join(', '))
+            );
+
+            left.appendChild(
+              el(
+                'div',
+                'meta',
+                fmtTime(call.createdAt) +
+                  ' 호출 · 학생 확인 대기 중'
+              )
+            );
+
+            button.type = 'button';
+
+            button.onclick = async function () {
+              button.disabled = true;
+
+              try {
+                const result = await teacherApi({
+                  action: 'cancel',
+                  id: call.id
+                });
+
+                if (!result.ok) {
+                  say(result.error || '취소 실패', 'err');
+                }
+
+                await refresh();
+              } catch (error) {
+                say('취소 요청을 전송하지 못했습니다.', 'err');
+              } finally {
+                button.disabled = false;
+              }
+            };
+
+            row.appendChild(left);
+            row.appendChild(button);
+            box.appendChild(row);
+          });
+        }
+
+        function renderRecent(list) {
+          const box = $('recent');
+          box.textContent = '';
+
+          if (!list.length) {
+            box.appendChild(
+              el('div', 'empty-note', '기록이 없습니다.')
+            );
+            return;
+          }
+
+          list.forEach(function (call) {
+            const row = el('div', 'item');
+            const left = el('div');
+
+            left.appendChild(
+              el('div', '', call.names.join(', '))
+            );
+
+            let status;
+
+            if (call.status === 'dismissed') {
+              status = '확인됨 (' + call.closedBy +
+                ', ' + fmtTime(call.closedAt) + ')';
+            } else if (call.status === 'cancelled') {
+              status = '교사가 취소';
+            } else {
+              status = '시간 만료';
+            }
+
+            left.appendChild(
+              el(
+                'div',
+                'meta',
+                fmtTime(call.createdAt) + ' 호출 · ' + status
+              )
+            );
+
+            row.appendChild(left);
+            box.appendChild(row);
+          });
+        }
+
+        async function refresh() {
+          if (!cls || !password || refreshing) {
+            return;
+          }
+
+          refreshing = true;
+
+          const targetClass = cls;
+          const version = sessionVersion;
+
+          try {
+            const result = await teacherApi(
+              { action: 'state' },
+              targetClass
+            );
+
+            if (version !== sessionVersion || targetClass !== cls) {
+              return;
+            }
+
+            if (!result.ok) {
+              say(result.error || '조회 실패', 'err');
+              return;
+            }
+
+            const newKey = JSON.stringify(result.roster);
+
+            if (newKey !== rosterKey) {
+              rosterKey = newKey;
+              roster = result.roster;
+
+              const validNumbers = new Set(
+                roster.map(function (student) {
+                  return student.number;
+                })
+              );
+
+              selected.forEach(function (number) {
+                if (!validNumbers.has(number)) {
+                  selected.delete(number);
+                }
+              });
+
+              renderGrid();
+            }
+
+            renderActive(result.active || []);
+            renderRecent(result.recent || []);
+          } catch (error) {
+            if (version === sessionVersion) {
+              say('서버에 연결할 수 없습니다.', 'err');
+            }
+          } finally {
+            refreshing = false;
+          }
+        }
+
+        function startRefreshLoop(version) {
+          clearTimeout(timer);
+
+          async function loop() {
+            if (!password || version !== sessionVersion) {
+              return;
+            }
+
+            await refresh();
+
+            if (password && version === sessionVersion) {
+              timer = setTimeout(loop, TEACHER_POLL_MS);
+            }
+          }
+
+          loop();
+        }
+
+        async function login() {
+          const button = $('loginBtn');
+          const enteredPassword = $('pw').value;
+
+          if (!enteredPassword) {
+            $('loginMsg').textContent = '비밀번호를 입력하세요.';
+            return;
+          }
+
+          button.disabled = true;
+          $('loginMsg').textContent = '';
+
+          try {
+            const result = await apiPost({
+              action: 'init',
+              password: enteredPassword
+            });
+
+            if (!result.ok) {
+              $('loginMsg').textContent =
+                result.error || '로그인 실패';
+              return;
+            }
+
+            password = enteredPassword;
+            sessionVersion += 1;
+            rosterKey = '';
+            roster = [];
+            selected.clear();
+
+            const classSelect = $('clsSel');
+            classSelect.textContent = '';
+
+            const classes = result.classes || [];
+
+            classes.forEach(function (className) {
+              const option = el('option', '', className);
+              option.value = className;
+              classSelect.appendChild(option);
+            });
+
+            if (classes.indexOf(cls) < 0) {
+              cls = classes[0] || '';
+            }
+
+            classSelect.value = cls;
+            saveClass(cls);
+
+            $('pw').value = '';
+            $('query').value = '';
+            $('loginBox').hidden = true;
+            $('mainBox').hidden = false;
+
+            renderGrid();
+            renderActive([]);
+            renderRecent([]);
+            say('');
+
+            if (!classes.length) {
+              say(
+                'students 시트에 학급과 학생 명단을 입력하세요.',
+                'err'
+              );
+            }
+
+            startRefreshLoop(sessionVersion);
+          } catch (error) {
+            $('loginMsg').textContent =
+              '서버에 연결할 수 없습니다. API_URL을 확인하세요.';
+          } finally {
+            button.disabled = false;
+          }
+        }
+
+        $('loginBtn').onclick = login;
+
+        $('pw').addEventListener('keydown', function (event) {
+          if (event.key === 'Enter' && !$('loginBtn').disabled) {
+            login();
+          }
+        });
+
+        $('logoutBtn').onclick = function () {
+          logout('');
+        };
+
+        $('clsSel').onchange = function (event) {
+          cls = event.target.value;
+          saveClass(cls);
+
+          selected.clear();
+          roster = [];
+          rosterKey = '';
+
+          $('query').value = '';
+
+          renderGrid();
+          renderActive([]);
+          renderRecent([]);
+          say('');
+
+          refresh();
+        };
+
+        $('query').addEventListener('input', renderGrid);
+
+        $('query').addEventListener('keydown', function (event) {
+          if (event.key === 'Enter' && !event.isComposing) {
+            addFromInput();
+          }
+        });
+
+        $('addBtn').onclick = addFromInput;
+
+        $('clearBtn').onclick = function () {
+          selected.clear();
+          renderGrid();
+        };
+
+        $('callBtn').onclick = async function () {
+          if (!selected.size) {
+            say('호출할 학생을 선택하세요.', 'err');
+            return;
+          }
+
+          const button = $('callBtn');
+          const targetClass = cls;
+          const numbers = Array.from(selected);
+          const version = sessionVersion;
+
+          button.disabled = true;
+          $('clsSel').disabled = true;
+
+          try {
+            const result = await teacherApi(
+              {
+                action: 'call',
+                numbers: numbers
+              },
+              targetClass
+            );
+
+            if (version !== sessionVersion) {
+              return;
+            }
+
+            if (result.ok) {
+              say(
+                '호출했습니다: ' + result.names.join(', '),
+                'ok'
+              );
+
+              selected.clear();
+              $('query').value = '';
+              renderGrid();
+
+              await refresh();
+            } else {
+              say(result.error || '호출 실패', 'err');
+            }
+          } catch (error) {
+            say(
+              '전송 결과를 확인하지 못했습니다. 호출 중 목록을 확인하세요.',
+              'err'
+            );
+          } finally {
+            button.disabled = false;
+            $('clsSel').disabled = false;
+          }
+        };
+
+        $('cancelAll').onclick = async function () {
+          if (!confirm('이 학급의 호출을 모두 취소할까요?')) {
+            return;
+          }
+
+          const button = $('cancelAll');
+          button.disabled = true;
+
+          try {
+            const result = await teacherApi({
+              action: 'cancel'
+            });
+
+            if (!result.ok) {
+              say(result.error || '취소 실패', 'err');
+            }
+
+            await refresh();
+          } catch (error) {
+            say('취소 요청을 전송하지 못했습니다.', 'err');
+          } finally {
+            button.disabled = false;
+          }
+        };
       }
-    };
 
-    if (pw) enter(true);
-  }
-
-  if (mode === 'teacher') startTeacher(); else startClassroom();
-})();
-</script>
+      if (mode === 'teacher') {
+        startTeacher();
+      } else {
+        startClassroom();
+      }
+    })();
+  </script>
 </body>
 </html>
