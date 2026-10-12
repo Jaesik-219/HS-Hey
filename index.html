@@ -469,6 +469,12 @@
   }
 }
 
+/* 이름 뒤의 아/야는 이름의 절반 크기로 표시합니다. */
+.call-ending {
+  font-size: .5em;
+  font-weight: 700;
+}
+    
   </style>
 </head>
 
@@ -902,14 +908,18 @@
   const nameText = el('span', 'call-name');
 
   if (parts.surname) {
-    nameText.appendChild(
+    
       el('span', 'surname', '(' + parts.surname + ')')
     );
   }
 
-  nameText.appendChild(
-    el('span', '', parts.givenName + parts.ending)
-  );
+nameText.appendChild(
+  el('span', '', parts.givenName)
+);
+
+nameText.appendChild(
+  el('span', 'call-ending', parts.ending)
+);
 
   const messageText = el(
     'span',
