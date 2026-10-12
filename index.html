@@ -428,6 +428,47 @@
     .toolbar {
       margin-bottom: 12px;
     }
+
+/* 이름은 크게, 안내 문장은 절반 크기로 표시합니다. */
+.names {
+  font-size: clamp(40px, 6vw, var(--fs, 96px));
+  gap: 16px;
+}
+
+.call-line {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px 18px;
+}
+
+.call-name {
+  color: #ffffff;
+  font-size: 1em;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.call-message {
+  color: #ffffff;
+  font-size: .5em;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.call-name .surname {
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+@media (max-width: 700px) {
+  .names {
+    font-size: clamp(36px, 8vw, 56px);
+  }
+}
+
   </style>
 </head>
 
@@ -856,34 +897,37 @@
           namesBox.textContent = '';
 
           names.forEach(function (name) {
-            const parts = nameParts(name);
-            const line = el('div', 'call-line');
+  const parts = nameParts(name);
+  const line = el('div', 'call-line');
+  const nameText = el('span', 'call-name');
 
-            if (parts.surname) {
-              line.appendChild(
-                el('span', 'surname', '(' + parts.surname + ')')
-              );
-            }
+  if (parts.surname) {
+    nameText.appendChild(
+      el('span', 'surname', '(' + parts.surname + ')')
+    );
+  }
 
-            line.appendChild(
-              el(
-                'span',
-                '',
-                parts.givenName +
-                  parts.ending +
-                  ' 교무실로 와라~'
-              )
-            );
+  nameText.appendChild(
+    el('span', '', parts.givenName + parts.ending)
+  );
 
-            namesBox.appendChild(line);
-          });
+  const messageText = el(
+    'span',
+    'call-message',
+    '교무실로 와라~'
+  );
 
-          const maxSize = names.length <= 1 ? 64
-            : names.length === 2 ? 56
-            : names.length === 3 ? 46
-            : 36;
+  line.appendChild(nameText);
+  line.appendChild(messageText);
+  namesBox.appendChild(line);
+});
 
-          namesBox.style.setProperty('--fs', maxSize + 'px');
+const maxSize = names.length <= 1 ? 96
+  : names.length === 2 ? 80
+  : names.length === 3 ? 64
+  : 48;
+
+namesBox.style.setProperty('--fs', maxSize + 'px');
 
           input = '';
           updateDisplay();
